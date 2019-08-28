@@ -49,7 +49,7 @@ model = dict(
             in_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=81,
+            num_classes=18,
             target_means=[0., 0., 0., 0.],
             target_stds=[0.1, 0.1, 0.2, 0.2],
             reg_class_agnostic=True,
@@ -67,7 +67,7 @@ model = dict(
             in_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=81,
+            num_classes=18,
             target_means=[0., 0., 0., 0.],
             target_stds=[0.05, 0.05, 0.1, 0.1],
             reg_class_agnostic=True,
@@ -85,7 +85,7 @@ model = dict(
             in_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=81,
+            num_classes=18,
             target_means=[0., 0., 0., 0.],
             target_stds=[0.033, 0.033, 0.067, 0.067],
             reg_class_agnostic=True,
@@ -108,7 +108,7 @@ model = dict(
         num_convs=4,
         in_channels=256,
         conv_out_channels=256,
-        num_classes=81,
+        num_classes=18,
         loss_mask=dict(
             type='CrossEntropyLoss', use_mask=True, loss_weight=1.0)),
     semantic_roi_extractor=dict(
@@ -217,16 +217,16 @@ test_cfg = dict(
         mask_thr_binary=0.5),
     keep_all_stages=False)
 # dataset settings
-dataset_type = 'CocoDataset'
+dataset_type = 'CocoRoadDataset'
 data_root = '/datasets/COCO/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 data = dict(
-    imgs_per_gpu=1,
+    imgs_per_gpu=2,
     workers_per_gpu=1,
     train=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_train2017.json',
+        ann_file='/home/ivb/datasets/COCO/annotations/instances_train2017_road_dev.json',
         img_prefix=data_root + 'train2017/',
         img_scale=[(1600, 400), (1600, 1400)],
         multiscale_mode='range',
@@ -241,7 +241,7 @@ data = dict(
         with_semantic_seg=True),
     val=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_val2017.json',
+        ann_file='/home/ivb/datasets/COCO/annotations/instances_val2017_road_dev.json',
         img_prefix=data_root + 'val2017/',
         img_scale=(1333, 800),
         img_norm_cfg=img_norm_cfg,
@@ -252,7 +252,7 @@ data = dict(
         with_label=True),
     test=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_val2017.json',
+        ann_file='/home/ivb/datasets/COCO/annotations/instances_val2017_road_dev.json',
         img_prefix=data_root + 'val2017/',
         img_scale=(1333, 800),
         img_norm_cfg=img_norm_cfg,
@@ -262,7 +262,7 @@ data = dict(
         with_label=False,
         test_mode=True))
 # optimizer
-optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.001, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
@@ -270,21 +270,21 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=1.0 / 3,
-    step=[16, 19])
+    step=[1, 2])
 checkpoint_config = dict(interval=1)
 # yapf:disable
 log_config = dict(
     interval=50,
     hooks=[
         dict(type='TextLoggerHook'),
-        # dict(type='TensorboardLoggerHook')
+        dict(type='TensorboardLoggerHook')
     ])
 # yapf:enable
 # runtime settings
-total_epochs = 20
+total_epochs = 3
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/htc_dconv_c3-c5_mstrain_400_1400_x101_64x4d_fpn_20e'
-load_from = None
+work_dir = './work_dirs/htc_dconv_c3-c5_mstrain_400_1400_x101_64x4d_fpn_20e_road'
+load_from = "/home/ivb/Deploy/cds-mmdetection/checkpoints/htc_dconv_c3-c5_mstrain_400_1400_x101_64x4d_fpn_20e_20190408-0e50669c_road.pth"
 resume_from = None
 workflow = [('train', 1)]

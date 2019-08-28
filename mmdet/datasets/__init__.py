@@ -10,11 +10,13 @@ from .utils import random_scale, show_ann, to_tensor
 from .voc import VOCDataset
 from .wider_face import WIDERFaceDataset
 from .xml_style import XMLDataset
+from .coco_road import CocoRoadDataset
 
 __all__ = [
     'CustomDataset', 'XMLDataset', 'CocoDataset', 'VOCDataset',
     'CityscapesDataset', 'GroupSampler', 'DistributedGroupSampler',
     'build_dataloader', 'to_tensor', 'random_scale', 'show_ann',
     'ConcatDataset', 'RepeatDataset', 'ExtraAugmentation', 'WIDERFaceDataset',
+    'CocoRoadDataset',
     'DATASETS', 'build_dataset'
 ]
