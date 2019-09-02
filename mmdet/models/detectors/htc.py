@@ -312,7 +312,7 @@ class HybridTaskCascade(CascadeRCNN):
             x, img_meta, self.test_cfg.rpn) if proposals is None else proposals
 
         if self.with_semantic:
-            _, semantic_feat = self.semantic_head(x)
+            semantic_pred, semantic_feat = self.semantic_head(x)
         else:
             semantic_feat = None
 
@@ -429,6 +429,8 @@ class HybridTaskCascade(CascadeRCNN):
             else:
                 results = ms_bbox_result
 
+        if self.with_semantic:
+            return results, semantic_pred[0]
         return results
 
     def aug_test(self, img, img_meta, proposals=None, rescale=False):

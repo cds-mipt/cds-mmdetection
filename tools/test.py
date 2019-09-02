@@ -3,6 +3,9 @@ import os
 import os.path as osp
 import shutil
 import tempfile
+import pycocotools.mask as mask_util
+import numpy as np
+from tqdm import tqdm
 
 import mmcv
 import torch
@@ -168,6 +171,10 @@ def main():
 
     # build the model and load checkpoint
     model = build_detector(cfg.model, train_cfg=None, test_cfg=cfg.test_cfg)
+    if hasattr(model, 'semantic_head') and model.semantic_head is not None:
+        with_semantic = True
+    else:
+        with_semantic = False
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
@@ -187,6 +194,14 @@ def main():
         outputs = multi_gpu_test(model, data_loader, args.tmpdir)
 
     rank, _ = get_dist_info()
+    # Save stuff segmentation predictions in COCO json format
+    if with_semantic:
+        outputs, semantic_pred = [o[0] for o in outputs], [o[1] for o in outputs]
+        if args.out and rank == 0:
+            mmcv.dump(semantic_pred, args.out + ".semsegm.pth")
+        if args.json_out and rank == 0:
+            semsegm2json(dataset, semantic_pred, args.json_out + ".semsegm.json")
+
     if args.out and rank == 0:
         print('\nwriting results to {}'.format(args.out))
         mmcv.dump(outputs, args.out)
@@ -218,6 +233,30 @@ def main():
                 outputs_ = [out[name] for out in outputs]
                 result_file = args.json_out + '.{}'.format(name)
                 results2json(dataset, outputs_, result_file)
+
+
+def semsegm2json(dataset, semantic_pred, out_file):
+    segm_json_results = []
+    for idx in tqdm(range(len(dataset))):
+        img_id = dataset.img_ids[idx]
+        img_info = dataset.img_infos[idx]
+        h, w = img_info['height'], img_info['width']
+        seg = semantic_pred[idx].detach().cpu().numpy()
+        seg_img = np.argmax(seg, axis=0) + 1  # Why +1?
+        for label in range(1, len(seg)):
+            seg_mask = (seg_img == label).astype(np.uint8) * 255
+            seg_mask = mmcv.imresize(seg_mask, (w, h))
+            seg_mask = (seg_mask > 128).astype(np.uint8)
+            seg_mask = np.asfortranarray(seg_mask)
+            rle = mask_util.encode(seg_mask)
+            rle["counts"] = rle["counts"].decode()
+            data = dict()
+            data['image_id'] = img_id
+            data['category_id'] = label
+            data['segmentation'] = rle
+            data['score'] = 1.0
+            segm_json_results.append(data)
+    mmcv.dump(segm_json_results, out_file)
 
 
 if __name__ == '__main__':
