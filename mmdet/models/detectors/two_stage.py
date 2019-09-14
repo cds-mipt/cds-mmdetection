@@ -230,17 +230,17 @@ class TwoStageDetector(BaseDetector, RPNTestMixin, BBoxTestMixin,
         proposal_list = self.simple_test_rpn(
             x, img_meta, self.test_cfg.rpn) if proposals is None else proposals
 
-        det_bboxes, det_labels = self.simple_test_bboxes(
+        det_bboxes, det_labels, det_scores = self.simple_test_bboxes(
             x, img_meta, proposal_list, self.test_cfg.rcnn, rescale=rescale)
-        bbox_results = bbox2result(det_bboxes, det_labels,
+        bbox_results, scores_result = bbox2result(det_bboxes, det_labels, det_scores,
                                    self.bbox_head.num_classes)
 
         if not self.with_mask:
-            return bbox_results
+            return bbox_results, scores_result
         else:
             segm_results = self.simple_test_mask(
                 x, img_meta, det_bboxes, det_labels, rescale=rescale)
-            return bbox_results, segm_results
+            return bbox_results, scores_result, segm_results
 
     def aug_test(self, imgs, img_metas, rescale=False):
         """Test with augmentations.

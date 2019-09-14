@@ -175,6 +175,7 @@ def main():
         with_semantic = True
     else:
         with_semantic = False
+    with_mask = model.with_mask
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
@@ -201,6 +202,16 @@ def main():
             mmcv.dump(semantic_pred, args.out + ".semsegm.pth")
         if args.json_out and rank == 0:
             semsegm2json(dataset, semantic_pred, args.json_out + ".semsegm.json")
+
+    if not with_mask:
+        outputs, bbox_scores = [o[0] for o in outputs], [o[1] for o in outputs]
+    else:
+        outputs, bbox_scores = [(o[0], o[2]) for o in outputs], [o[1] for o in outputs]
+
+    if args.out and rank == 0:
+        mmcv.dump(bbox_scores, args.out + ".bboxscores.pth")
+    if args.json_out and rank == 0:
+        scores2npz(dataset, bbox_scores, args.json_out + ".bboxscores.npz")
 
     if args.out and rank == 0:
         print('\nwriting results to {}'.format(args.out))
@@ -257,6 +268,17 @@ def semsegm2json(dataset, semantic_pred, out_file):
             data['score'] = 1.0
             segm_json_results.append(data)
     mmcv.dump(segm_json_results, out_file)
+
+
+def scores2npz(dataset, scores, out_file):
+    scores_result = []
+    for idx in range(len(dataset)):
+        image_scores = scores[idx]
+        for label in range(len(image_scores)):
+            cls_scores = image_scores[label]
+            scores_result.append(cls_scores)
+    scores_result = np.concatenate(scores_result, axis=0)
+    np.savez_compressed(out_file, scores_result)
 
 
 if __name__ == '__main__':

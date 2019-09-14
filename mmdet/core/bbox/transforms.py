@@ -135,25 +135,30 @@ def roi2bbox(rois):
     return bbox_list
 
 
-def bbox2result(bboxes, labels, num_classes):
+def bbox2result(bboxes, labels, scores, num_classes):
     """Convert detection results to a list of numpy arrays.
 
     Args:
         bboxes (Tensor): shape (n, 5)
         labels (Tensor): shape (n, )
+        scores (Tensor): shape (n, num_classes)
         num_classes (int): class number, including background class
 
     Returns:
         list(ndarray): bbox results of each class
     """
     if bboxes.shape[0] == 0:
-        return [
+        return ([
             np.zeros((0, 5), dtype=np.float32) for i in range(num_classes - 1)
-        ]
+        ], [
+            np.zeros((0, num_classes), dtype=np.float32) for i in range(num_classes - 1)
+        ])
     else:
         bboxes = bboxes.cpu().numpy()
         labels = labels.cpu().numpy()
-        return [bboxes[labels == i, :] for i in range(num_classes - 1)]
+        scores = scores.cpu().numpy()
+        return ([bboxes[labels == i, :] for i in range(num_classes - 1)],
+                [scores[labels == i, :] for i in range(num_classes - 1)])
 
 
 def distance2bbox(points, distance, max_shape=None):
