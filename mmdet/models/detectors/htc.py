@@ -322,6 +322,7 @@ class HybridTaskCascade(CascadeRCNN):
 
         # "ms" in variable names means multi-stage
         ms_bbox_result = {}
+        ms_scores_result = {}
         ms_segm_result = {}
         ms_scores = []
         rcnn_test_cfg = self.test_cfg.rcnn
@@ -334,7 +335,7 @@ class HybridTaskCascade(CascadeRCNN):
             ms_scores.append(cls_score)
 
             if self.test_cfg.keep_all_stages:
-                det_bboxes, det_labels = bbox_head.get_det_bboxes(
+                det_bboxes, det_labels, det_scores = bbox_head.get_det_bboxes(
                     rois,
                     cls_score,
                     bbox_pred,
@@ -342,9 +343,10 @@ class HybridTaskCascade(CascadeRCNN):
                     scale_factor,
                     rescale=rescale,
                     nms_cfg=rcnn_test_cfg)
-                bbox_result = bbox2result(det_bboxes, det_labels,
+                bbox_result, scores_result = bbox2result(det_bboxes, det_labels, det_scores,
                                           bbox_head.num_classes)
                 ms_bbox_result['stage{}'.format(i)] = bbox_result
+                ms_scores_result['stage{}'.format(i)] = scores_result
 
                 if self.with_mask:
                     mask_head = self.mask_head[i]
@@ -368,7 +370,7 @@ class HybridTaskCascade(CascadeRCNN):
                                                   img_meta[0])
 
         cls_score = sum(ms_scores) / float(len(ms_scores))
-        det_bboxes, det_labels = self.bbox_head[-1].get_det_bboxes(
+        det_bboxes, det_labels, det_scores = self.bbox_head[-1].get_det_bboxes(
             rois,
             cls_score,
             bbox_pred,
@@ -376,9 +378,10 @@ class HybridTaskCascade(CascadeRCNN):
             scale_factor,
             rescale=rescale,
             cfg=rcnn_test_cfg)
-        bbox_result = bbox2result(det_bboxes, det_labels,
+        bbox_result, scores_result = bbox2result(det_bboxes, det_labels, det_scores,
                                   self.bbox_head[-1].num_classes)
         ms_bbox_result['ensemble'] = bbox_result
+        ms_scores_result['ensemble'] = scores_result
 
         if self.with_mask:
             if det_bboxes.shape[0] == 0:
@@ -416,18 +419,18 @@ class HybridTaskCascade(CascadeRCNN):
 
         if not self.test_cfg.keep_all_stages:
             if self.with_mask:
-                results = (ms_bbox_result['ensemble'],
+                results = (ms_bbox_result['ensemble'], ms_scores_result['ensemble'],
                            ms_segm_result['ensemble'])
             else:
-                results = ms_bbox_result['ensemble']
+                results = ms_bbox_result['ensemble'], ms_scores_result['ensemble']
         else:
             if self.with_mask:
                 results = {
-                    stage: (ms_bbox_result[stage], ms_segm_result[stage])
+                    stage: (ms_bbox_result[stage], ms_scores_result[stage], ms_segm_result[stage])
                     for stage in ms_bbox_result
                 }
             else:
-                results = ms_bbox_result
+                results = ms_bbox_result, ms_scores_result
 
         if self.with_semantic:
             return results, semantic_pred[0]

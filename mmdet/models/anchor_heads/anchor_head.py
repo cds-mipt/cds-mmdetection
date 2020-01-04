@@ -264,7 +264,8 @@ class AnchorHead(nn.Module):
         if self.use_sigmoid_cls:
             padding = mlvl_scores.new_zeros(mlvl_scores.shape[0], 1)
             mlvl_scores = torch.cat([padding, mlvl_scores], dim=1)
-        det_bboxes, det_labels = multiclass_nms(mlvl_bboxes, mlvl_scores,
+        # return mlvl_bboxes, mlvl_scores
+        det_bboxes, det_labels, det_scores = multiclass_nms(mlvl_bboxes, mlvl_scores,
                                                 cfg.score_thr, cfg.nms,
                                                 cfg.max_per_img)
-        return det_bboxes, det_labels
+        return det_bboxes, det_labels, det_scores
