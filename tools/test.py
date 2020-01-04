@@ -5,6 +5,8 @@ import shutil
 import tempfile
 import pycocotools.mask as mask_util
 import numpy as np
+import time
+import sys
 from tqdm import tqdm
 
 import mmcv
@@ -24,9 +26,13 @@ def single_gpu_test(model, data_loader, show=False):
     results = []
     dataset = data_loader.dataset
     prog_bar = mmcv.ProgressBar(len(dataset))
+    times = []
     for i, data in enumerate(data_loader):
         with torch.no_grad():
+            start = time.clock_gettime(time.CLOCK_MONOTONIC)
             result = model(return_loss=False, rescale=not show, **data)
+            end = time.clock_gettime(time.CLOCK_MONOTONIC)
+            times.append(end - start)
         results.append(result)
 
         if show:
@@ -35,6 +41,8 @@ def single_gpu_test(model, data_loader, show=False):
         batch_size = data['img'][0].size(0)
         for _ in range(batch_size):
             prog_bar.update()
+        sys.stdout.write(" Speed {:.4f} ms".format(np.mean(times) * 1000))
+    sys.stdout.write(" Speed {:.4f} ms".format(np.mean(times) * 1000))
     return results
 
 
