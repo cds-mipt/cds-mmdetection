@@ -204,8 +204,17 @@ data = dict(
         with_label=True),
     test=dict(
         type=dataset_type,
-        ann_file='/home/ivb/datasets/converted/2019-01-31-15-53-26_kia_velo_gps_time_stereo_left_10+1.json',
-        img_prefix='/datasets/NKBVS_data/converted/2019-01-31-15-53-26_kia_velo_gps_time_stereo_left/',
+        # ann_file='/home/ivb/datasets/converted/2019-01-31-15-53-26_kia_velo_gps_time_stereo_left_10+1.json',
+        # img_prefix='/datasets/NKBVS_data/converted/2019-01-31-15-53-26_kia_velo_gps_time_stereo_left/',
+
+
+        # ann_file='/home/ivb/datasets/icevision_jpeg_orig/JSON/2018-02-13_1523_left_10+1_images.json',
+        # img_prefix='/datasets/icevision_jpeg_orig/2018-02-13_1523_left/',
+
+        ann_file='/home/ivb/datasets/icevision_jpeg_orig/JSON/2018-03-16_1324_left_10+1_images.json',
+        img_prefix='/datasets/icevision_jpeg_orig/2018-03-16_1324_left/',
+
+
         img_scale=(1333, 800),
         img_norm_cfg=img_norm_cfg,
         size_divisor=32,
